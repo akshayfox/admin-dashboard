@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table";
+import { FilterPopover, FilterOption } from "@/components/ui/filter-popover";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Filter, Search, Eye, FileText, Package } from "lucide-react";
@@ -13,6 +14,7 @@ import type { OrderWithUser } from "@shared/schema";
 const Orders = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderWithUser | null>(null);
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
   // Fetch orders
   const { data: orders, isLoading } = useQuery<OrderWithUser[]>({
@@ -102,6 +104,41 @@ const Orders = () => {
     setSelectedOrder(order);
     setIsViewModalOpen(true);
   };
+  
+  const handleFilterChange = (filters: Record<string, any>) => {
+    setActiveFilters(filters);
+  };
+  
+  const handleClearFilters = () => {
+    setActiveFilters({});
+  };
+  
+  const filterOptions: FilterOption[] = [
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'pending', label: 'Pending' },
+        { value: 'processing', label: 'Processing' },
+        { value: 'shipped', label: 'Shipped' },
+        { value: 'delivered', label: 'Delivered' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ]
+    },
+    {
+      id: 'totalAmount',
+      label: 'Total Amount',
+      type: 'number',
+      placeholder: 'Enter amount'
+    },
+    {
+      id: 'createdAt',
+      label: 'Order Date',
+      type: 'date'
+    }
+  ];
 
   return (
     <>
@@ -111,10 +148,12 @@ const Orders = () => {
           <p className="text-sm text-slate-500 dark:text-slate-400">Manage customer orders</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
+          <FilterPopover 
+            filters={filterOptions}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+          />
           <Button variant="default">
             <Package className="h-4 w-4 mr-2" />
             New Order
@@ -122,28 +161,27 @@ const Orders = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-          <div className="flex items-center justify-between w-full">
-            <h3 className="text-md font-medium text-slate-700 dark:text-slate-300">All Orders</h3>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                <Input
-                  type="search"
-                  placeholder="Search orders..."
-                  className="pl-9 w-60 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-indigo-300 dark:focus:border-indigo-600 focus:ring-indigo-300 dark:focus:ring-indigo-600"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DataTable 
-          columns={columns} 
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden p-4">
+        <EnhancedDataTable 
+          columns={columns.map(col => ({
+            ...col,
+            filterable: true,
+            filterType: col.accessorKey === 'status' ? 'select' : 
+                      col.accessorKey === 'createdAt' ? 'date' : 'text',
+            filterOptions: col.accessorKey === 'status' ? [
+              { value: 'pending', label: 'Pending' },
+              { value: 'processing', label: 'Processing' },
+              { value: 'shipped', label: 'Shipped' },
+              { value: 'delivered', label: 'Delivered' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'cancelled', label: 'Cancelled' }
+            ] : undefined
+          }))} 
           data={orders || []} 
           isLoading={isLoading}
-          pagination
+          pagination={true}
+          searchable={true}
+          filterable={true}
           title="Orders"
         />
       </div>

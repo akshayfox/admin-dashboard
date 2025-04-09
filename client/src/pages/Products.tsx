@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -211,27 +211,23 @@ const Products = () => {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-          <div className="flex items-center justify-between w-full">
-            <h3 className="text-md font-medium text-slate-700 dark:text-slate-300">All Products</h3>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  className="pl-9 w-60 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-indigo-300 dark:focus:border-indigo-600 focus:ring-indigo-300 dark:focus:ring-indigo-600"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DataTable 
-          columns={columns} 
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden p-4">
+        <EnhancedDataTable 
+          columns={columns.map(col => ({
+            ...col,
+            filterable: true,
+            filterType: col.accessorKey === 'category' ? 'select' : 'text',
+            filterOptions: col.accessorKey === 'category' ? 
+              [...new Set((products || [])
+                .map(p => p.category)
+                .filter(Boolean)
+                .map(cat => ({ value: cat || '', label: cat || 'Uncategorized' })))] : undefined
+          }))} 
           data={products || []} 
           isLoading={isLoading}
+          pagination={true}
+          searchable={true}
+          filterable={true}
           title="Products"
         />
       </div>
