@@ -43,7 +43,7 @@ export default function Sidebar() {
   // Manage sidebar visibility with transform
   const sidebarClasses = `fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${
     !isOpen ? '-translate-x-full' : 'translate-x-0'
-  } md:z-20`;
+  }`;
 
   return (
     <>
