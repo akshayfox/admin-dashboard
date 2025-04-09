@@ -59,18 +59,26 @@ const TopProducts = ({ products }: TopProductsProps) => {
         {products.map((product) => (
           <div key={product.id} className="flex items-center gap-3">
             <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-md flex items-center justify-center">
-              {getProductIcon(product.icon)}
+              {product.imageUrl ? (
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name} 
+                  className="h-8 w-8 object-contain"
+                />
+              ) : (
+                getProductIcon()
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
                 {product.name}
               </h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {product.sales} sales
+                {product.totalSold} sales
               </p>
             </div>
             <span className="text-sm font-medium text-slate-900 dark:text-white">
-              ${product.revenue.toFixed(2)}
+              ${product.totalRevenue.toFixed(2)}
             </span>
           </div>
         ))}

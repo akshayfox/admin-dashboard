@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/dashboard/sales", async (req, res) => {
     try {
-      const timeRange = req.query.timeRange as string || 'monthly';
+      const timeRange = (req.query.timeRange as string) || 'monthly';
       
       // Get sales data based on time range
       const salesData = await storage.getSalesData(timeRange);

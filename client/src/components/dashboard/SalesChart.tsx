@@ -33,7 +33,7 @@ const SalesChart = ({ data, timeRange, onRangeChange }: SalesChartProps) => {
   // Format data for chart display
   const formattedData = useMemo(() => {
     return data.map(item => ({
-      name: item.month,
+      name: item.date,
       revenue: item.revenue
     }));
   }, [data]);

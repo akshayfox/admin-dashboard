@@ -16,16 +16,17 @@ const TopNav = () => {
         <div className="flex items-center">
           <button 
             onClick={toggle}
-            className="md:hidden p-2 mr-2 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            className="p-2 mr-2 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            aria-label="Toggle Sidebar"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
             <input 
               type="search" 
               placeholder="Search..." 
-              className="h-9 w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:focus:ring-slate-600 pl-9"
+              className="h-9 w-48 md:w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:focus:ring-slate-600 pl-9"
             />
           </div>
         </div>

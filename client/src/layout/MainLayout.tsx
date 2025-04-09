@@ -16,10 +16,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       
-      <div className={`flex flex-col flex-1 ${!isMobile ? 'md:ml-64' : ''}`}>
+      <div className="flex flex-col flex-1 w-full">
         <TopNav />
         
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

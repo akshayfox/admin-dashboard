@@ -24,34 +24,34 @@ const AnalyticsCards = ({ stats }: AnalyticsCardsProps) => {
     {
       title: "Total Revenue",
       value: `$${stats.totalRevenue.toFixed(2)}`,
-      previousValue: `$${stats.previousRevenue.toFixed(2)}`,
-      percentChange: ((stats.totalRevenue - stats.previousRevenue) / stats.previousRevenue) * 100,
+      previousValue: `$${stats.todayRevenue.toFixed(2)} today`,
+      percentChange: stats.todayRevenue > 0 ? (stats.todayRevenue / stats.totalRevenue) * 100 : 0,
       progressWidth: "72%",
       progressColor: "bg-emerald-500"
     },
     {
-      title: "New Customers",
-      value: stats.newCustomers.toLocaleString(),
-      previousValue: stats.previousCustomers.toLocaleString(),
-      percentChange: ((stats.newCustomers - stats.previousCustomers) / stats.previousCustomers) * 100,
+      title: "Orders",
+      value: stats.totalOrders.toLocaleString(),
+      previousValue: `${stats.pendingOrders} pending`,
+      percentChange: stats.totalOrders > 0 ? (stats.pendingOrders / stats.totalOrders) * 100 : 0,
       progressWidth: "58%",
       progressColor: "bg-indigo-500"
     },
     {
-      title: "Active Users",
-      value: stats.activeUsers.toLocaleString(),
-      previousValue: stats.previousActiveUsers.toLocaleString(),
-      percentChange: ((stats.activeUsers - stats.previousActiveUsers) / stats.previousActiveUsers) * 100,
+      title: "Products",
+      value: stats.totalProducts.toLocaleString(),
+      previousValue: `${stats.lowStockProducts} low stock`,
+      percentChange: stats.totalProducts > 0 ? (stats.lowStockProducts / stats.totalProducts) * 100 : 0,
       progressWidth: "35%",
       progressColor: "bg-amber-500"
     },
     {
-      title: "Total Orders",
-      value: stats.totalOrders.toLocaleString(),
-      previousValue: stats.previousOrders.toLocaleString(),
-      percentChange: ((stats.totalOrders - stats.previousOrders) / stats.previousOrders) * 100,
+      title: "Customers",
+      value: stats.totalCustomers.toLocaleString(),
+      previousValue: `${stats.completedOrders} completed orders`,
+      percentChange: stats.totalOrders > 0 ? (stats.completedOrders / stats.totalOrders) * 100 : 0,
       progressWidth: "42%",
-      progressColor: "bg-red-500"
+      progressColor: "bg-blue-500"
     }
   ];
 
