@@ -26,10 +26,17 @@ export function FilterPopover({ filters, activeFilters, onFilterChange, onClearF
   const hasActiveFilters = Object.keys(activeFilters).length > 0;
 
   const handleInputChange = (id: string, value: any) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [id]: value
-    }));
+    // If value is "all", we want to remove the filter
+    if (value === "all") {
+      const newFilters = { ...localFilters };
+      delete newFilters[id];
+      setLocalFilters(newFilters);
+    } else {
+      setLocalFilters(prev => ({
+        ...prev,
+        [id]: value
+      }));
+    }
   };
 
   const handleApplyFilters = () => {
@@ -82,14 +89,14 @@ export function FilterPopover({ filters, activeFilters, onFilterChange, onClearF
                 
                 {filter.type === 'select' && (
                   <Select
-                    value={localFilters[filter.id] || ''}
+                    value={localFilters[filter.id] || 'all'}
                     onValueChange={(value) => handleInputChange(filter.id, value)}
                   >
                     <SelectTrigger id={filter.id} className="h-8 text-xs">
                       <SelectValue placeholder={filter.placeholder || `Select ${filter.label}`} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       {filter.options?.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
