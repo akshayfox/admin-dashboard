@@ -41,9 +41,9 @@ export default function Sidebar() {
   const isMobile = useIsMobile();
 
   // In mobile view, manage sidebar visibility with transform and overlay
-  const sidebarClasses = `fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${
+  const sidebarClasses = `fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${
     !isOpen ? '-translate-x-full' : 'translate-x-0'
-  } md:translate-x-0`;
+  } md:translate-x-0 md:z-20`;
 
   return (
     <>
