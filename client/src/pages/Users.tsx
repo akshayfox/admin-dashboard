@@ -272,6 +272,7 @@ const Users = () => {
           columns={columns} 
           data={users || []} 
           isLoading={isLoading}
+          title="Users"
         />
       </div>
 

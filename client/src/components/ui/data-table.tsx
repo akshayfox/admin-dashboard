@@ -8,7 +8,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Download } from "lucide-react";
 import { useState } from "react";
+import * as XLSX from 'xlsx';
 
 interface DataTableProps {
   columns: {
@@ -20,6 +22,7 @@ interface DataTableProps {
   data: any[];
   isLoading?: boolean;
   pagination?: boolean;
+  title?: string;
 }
 
 export function DataTable({
@@ -27,9 +30,39 @@ export function DataTable({
   data,
   isLoading = false,
   pagination = false,
+  title = "Data",
 }: DataTableProps) {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
+
+  // Function to export data to Excel
+  const exportToExcel = () => {
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Format data for export - strip out any React components
+    const exportData = data.map(row => {
+      const newRow: Record<string, any> = {};
+      
+      columns.forEach(column => {
+        if (column.accessorKey) {
+          // Use column header as the key in the Excel file
+          newRow[column.header] = row[column.accessorKey];
+        }
+      });
+      
+      return newRow;
+    });
+    
+    // Create worksheet from data
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    
+    // Generate Excel file and trigger download
+    XLSX.writeFile(wb, `${title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
 
   // Skip if no data or loading
   if (isLoading) {
@@ -79,6 +112,19 @@ export function DataTable({
 
   return (
     <div>
+      {/* Table actions - Export button */}
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={exportToExcel}
+        >
+          <Download className="h-4 w-4" />
+          <span>Export Excel</span>
+        </Button>
+      </div>
+      
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

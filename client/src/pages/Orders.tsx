@@ -141,6 +141,7 @@ const Orders = () => {
           data={orders || []} 
           isLoading={isLoading}
           pagination
+          title="Orders"
         />
       </div>
 

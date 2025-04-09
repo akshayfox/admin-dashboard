@@ -229,6 +229,7 @@ const Products = () => {
           columns={columns} 
           data={products || []} 
           isLoading={isLoading}
+          title="Products"
         />
       </div>
 
