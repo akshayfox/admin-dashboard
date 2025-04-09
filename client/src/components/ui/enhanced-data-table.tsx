@@ -190,8 +190,8 @@ export function EnhancedDataTable({
   return (
     <div>
       {/* Table header with title and actions */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
-        <h3 className="text-lg font-medium text-slate-900 dark:text-white">{title}</h3>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-5">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white bg-gradient-to-r from-primary/90 to-primary/70 bg-clip-text text-transparent">{title}</h3>
         
         <div className="flex items-center gap-2">
           {filterable && filterOptions.length > 0 && (
@@ -206,7 +206,7 @@ export function EnhancedDataTable({
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-600 border-green-200 hover:border-green-300 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:border-green-800 dark:hover:border-green-700"
+            className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-600 border-green-200 hover:border-green-300 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:border-green-800 dark:hover:border-green-700 rounded-lg shadow-sm hover:shadow transition-all"
             onClick={exportToExcel}
           >
             <Download className="h-4 w-4" />
@@ -217,13 +217,13 @@ export function EnhancedDataTable({
       
       {/* Search bar */}
       {searchable && (
-        <div className="mb-4">
+        <div className="mb-5">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-primary/70 dark:text-primary/60" />
             <Input
               type="search"
               placeholder={`Search ${title.toLowerCase()}...`}
-              className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 w-full md:max-w-xs focus:border-indigo-300 dark:focus:border-indigo-600 focus:ring-indigo-300 dark:focus:ring-indigo-600"
+              className="pl-10 bg-slate-50/80 dark:bg-slate-800/50 border-none rounded-lg h-10 w-full md:max-w-xs focus:ring-2 focus:ring-primary/30 shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -233,20 +233,20 @@ export function EnhancedDataTable({
       
       {/* Results summary */}
       {(searchTerm || Object.keys(activeFilters).length > 0) && (
-        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-          Found <span className="font-medium text-slate-900 dark:text-white">{filteredData.length}</span> result{filteredData.length !== 1 ? 's' : ''} 
+        <div className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+          Found <span className="font-medium text-primary dark:text-primary-foreground">{filteredData.length}</span> result{filteredData.length !== 1 ? 's' : ''} 
           {searchTerm ? ` for "${searchTerm}"` : ''} 
           {Object.keys(activeFilters).length > 0 ? ' with active filters' : ''}
         </div>
       )}
       
       {/* Table */}
-      <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+      <div className="overflow-x-auto rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900 shadow-sm">
         <Table>
-          <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+          <TableHeader className="bg-slate-50/80 dark:bg-slate-800/50">
             <TableRow>
               {columns.map((column, i) => (
-                <TableHead key={i} className="whitespace-nowrap font-semibold text-slate-700 dark:text-slate-300">
+                <TableHead key={i} className="whitespace-nowrap font-semibold text-sm text-slate-700 dark:text-slate-300 py-4">
                   {column.header}
                 </TableHead>
               ))}
@@ -255,9 +255,9 @@ export function EnhancedDataTable({
           <TableBody>
             {paginatedData.length > 0 ? (
               paginatedData.map((row, rowIndex) => (
-                <TableRow key={rowIndex} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <TableRow key={rowIndex} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                   {columns.map((column, colIndex) => (
-                    <TableCell key={colIndex} className="py-3">
+                    <TableCell key={colIndex} className="py-3.5 text-slate-700 dark:text-slate-300">
                       {column.cell
                         ? column.cell({ row: { original: row, getValue: (key: string) => row[key] } })
                         : column.accessorKey
@@ -280,7 +280,7 @@ export function EnhancedDataTable({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-4 mt-4 bg-white dark:bg-slate-900 border rounded-md border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between px-5 py-4 mt-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border rounded-xl border-slate-200/70 dark:border-slate-800/70 shadow-sm">
           <div className="text-sm text-slate-500 dark:text-slate-400">
             Showing <span className="font-medium text-slate-900 dark:text-white">{startIndex + 1}</span> to{" "}
             <span className="font-medium text-slate-900 dark:text-white">
@@ -288,11 +288,11 @@ export function EnhancedDataTable({
             </span> of{" "}
             <span className="font-medium text-slate-900 dark:text-white">{filteredData.length}</span> results
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-9 w-9 rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
             >
@@ -317,7 +317,11 @@ export function EnhancedDataTable({
                   key={pageNum}
                   variant={pageNum === page ? "default" : "outline"}
                   size="icon"
-                  className={`h-8 w-8 rounded-md ${pageNum === page ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
+                  className={`h-9 w-9 rounded-lg font-medium ${
+                    pageNum === page 
+                      ? 'bg-primary hover:bg-primary/90 text-white shadow-md' 
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
                   onClick={() => setPage(pageNum)}
                 >
                   {pageNum}
@@ -327,7 +331,7 @@ export function EnhancedDataTable({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 rounded-md"
+              className="h-9 w-9 rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >

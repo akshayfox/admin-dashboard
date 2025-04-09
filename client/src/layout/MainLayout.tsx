@@ -16,14 +16,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const mainContentClass = `flex-1 transition-all duration-300 ease-in-out ${isOpen ? 'md:ml-64' : ''}`;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       <Sidebar />
       
       <div className={`flex flex-col w-full ${mainContentClass}`}>
         <TopNav />
         
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
