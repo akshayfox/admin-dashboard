@@ -113,11 +113,12 @@ export function DataTable({
   return (
     <div>
       {/* Table actions - Export button */}
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-slate-900 dark:text-white">{title}</h3>
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-600 border-green-200 hover:border-green-300 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:border-green-800 dark:hover:border-green-700"
           onClick={exportToExcel}
         >
           <Download className="h-4 w-4" />
@@ -125,12 +126,12 @@ export function DataTable({
         </Button>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
             <TableRow>
               {columns.map((column, i) => (
-                <TableHead key={i} className="whitespace-nowrap">
+                <TableHead key={i} className="whitespace-nowrap font-semibold text-slate-700 dark:text-slate-300">
                   {column.header}
                 </TableHead>
               ))}
@@ -138,9 +139,9 @@ export function DataTable({
           </TableHeader>
           <TableBody>
             {paginatedData.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
+              <TableRow key={rowIndex} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 {columns.map((column, colIndex) => (
-                  <TableCell key={colIndex}>
+                  <TableCell key={colIndex} className="py-3">
                     {column.cell
                       ? column.cell({ row: { original: row, getValue: (key: string) => row[key] } })
                       : column.accessorKey
@@ -155,7 +156,7 @@ export function DataTable({
       </div>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between px-4 py-4 mt-4 bg-white dark:bg-slate-900 border rounded-md border-slate-200 dark:border-slate-800">
           <div className="text-sm text-slate-500 dark:text-slate-400">
             Showing <span className="font-medium text-slate-900 dark:text-white">{startIndex + 1}</span> to{" "}
             <span className="font-medium text-slate-900 dark:text-white">
@@ -163,11 +164,11 @@ export function DataTable({
             </span> of{" "}
             <span className="font-medium text-slate-900 dark:text-white">{data.length}</span> results
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-md"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
             >
@@ -192,7 +193,7 @@ export function DataTable({
                   key={pageNum}
                   variant={pageNum === page ? "default" : "outline"}
                   size="icon"
-                  className="h-8 w-8"
+                  className={`h-8 w-8 rounded-md ${pageNum === page ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
                   onClick={() => setPage(pageNum)}
                 >
                   {pageNum}
@@ -202,7 +203,7 @@ export function DataTable({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-md"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
