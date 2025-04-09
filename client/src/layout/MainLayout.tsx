@@ -13,7 +13,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const isMobile = useIsMobile();
 
   // Calculate main content padding based on sidebar state
-  const mainContentClass = `flex-1 ${!isOpen || isMobile ? 'md:pl-64' : ''}`;
+  const mainContentClass = 'flex-1';
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">

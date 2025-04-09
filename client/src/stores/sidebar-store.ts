@@ -7,8 +7,12 @@ interface SidebarState {
   close: () => void;
 }
 
+// Helper to detect if we're on mobile initially
+const isInitiallyMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
 export const useSidebarStore = create<SidebarState>((set) => ({
-  isOpen: true,
+  // Default to closed on mobile, open on desktop
+  isOpen: !isInitiallyMobile,
   
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   
