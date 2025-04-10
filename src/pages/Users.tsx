@@ -1,447 +1,226 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { EnhancedDataTable } from "@/components/ui/enhanced-data-table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Trash2, Edit, User as UserIcon } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table/DataTable";
+import { type ColumnDef } from "@tanstack/react-table";
+import { mockUsers, type User } from "@/data/mock/users";
+import { createDateCell, createPriceCell, createSortableHeader } from "@/components/ui/data-table/columns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { insertUserSchema } from "../../shared/schema";
-import type { User } from "../../shared/schema";
-import { z } from "zod";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-interface ApiError {
-  message: string;
-  status?: number;
-}
+const roleVariants = {
+  admin: {
+    label: "Admin",
+    className: "text-purple-700 dark:text-purple-500 border-purple-300 dark:border-purple-500 bg-purple-50 dark:bg-purple-950",
+  },
+  manager: {
+    label: "Manager",
+    className: "text-blue-700 dark:text-blue-500 border-blue-300 dark:border-blue-500 bg-blue-50 dark:bg-blue-950",
+  },
+  user: {
+    label: "User",
+    className: "text-slate-700 dark:text-slate-500 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-950",
+  },
+};
 
-// Define the form schema with proper types
-type UserFormValues = z.infer<typeof formSchema>;
+const statusVariants = {
+  active: {
+    label: "Active",
+    className: "text-emerald-700 dark:text-emerald-500 border-emerald-300 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950",
+  },
+  inactive: {
+    label: "Inactive",
+    className: "text-slate-700 dark:text-slate-500 border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-950",
+  },
+  suspended: {
+    label: "Suspended",
+    className: "text-rose-700 dark:text-rose-500 border-rose-300 dark:border-rose-500 bg-rose-50 dark:bg-rose-950",
+  },
+};
 
-// Create the form schema outside the component for better reuse
-const formSchema = insertUserSchema.extend({
-  confirmPassword: z.string().optional(),
-}).refine((data) => {
-  return !data.password || data.password === data.confirmPassword;
-}, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
-const Users = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const { toast } = useToast();
-
-  // Fetch users
-  const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-  });
-
-  // Setup form with proper types
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-      confirmPassword: '',
-      fullName: '',
-      email: '',
-      role: 'user',
-      avatarUrl: '',
-    },
-  });
-
-  // Create user mutation with proper typing
-  const createMutation = useMutation<
-    User,
-    ApiError,
-    Omit<UserFormValues, "confirmPassword">
-  >({
-    mutationFn: (data) => apiRequest('POST', '/api/users', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      toast({
-        title: "User Created",
-        description: "The user has been created successfully.",
-      });
-      setIsDialogOpen(false);
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Update user mutation with proper typing
-  const updateMutation = useMutation<
-    User,
-    ApiError,
-    { id: number, data: Partial<Omit<UserFormValues, "confirmPassword">> }
-  >({
-    mutationFn: ({ id, data }) => 
-      apiRequest('PATCH', `/api/users/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      toast({
-        title: "User Updated",
-        description: "The user has been updated successfully.",
-      });
-      setIsDialogOpen(false);
-      setEditingUser(null);
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Delete user mutation with proper typing
-  const deleteMutation = useMutation<
-    void,
-    ApiError,
-    number
-  >({
-    mutationFn: (id) => apiRequest('DELETE', `/api/users/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      toast({
-        title: "User Deleted",
-        description: "The user has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Define columns for data table with proper types
-  const columns = [
-    {
-      header: "ID",
-      accessorKey: "id",
-    },
-    {
-      header: "User",
-      accessorKey: "username",
-      cell: ({ row }: { row: { original: User } }) => {
-        const user = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar>
-              <AvatarImage src={user.avatarUrl || ''} />
-              <AvatarFallback>
-                {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="font-medium">{user.fullName}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">{user.username}</div>
-            </div>
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: "name",
+    header: createSortableHeader("User"),
+    cell: ({ row }) => {
+      const user = row.original;
+      return (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.avatar} />
+            <AvatarFallback>
+              {user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <span className="text-sm font-medium">{user.name}</span>
+            <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
-        );
-      }
+        </div>
+      );
     },
-    {
-      header: "Email",
-      accessorKey: "email",
-    },
-    {
-      header: "Role",
-      accessorKey: "role",
-      cell: ({ row }: { row: { getValue: (key: string) => string, original: User } }) => {
-        const role = row.getValue("role");
-        return (
-          <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-            role === 'admin' 
-              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400'
-              : 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400'
-          }`}>
-            {role.charAt(0).toUpperCase() + role.slice(1)}
-          </span>
-        );
-      }
-    },
-    {
-      header: "Actions",
-      id: "actions",
-      cell: ({ row }: { row: { original: User } }) => {
-        const user = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleEdit(user)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleDelete(user.id)}
-              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      }
-    }
-  ];
+  },
+  {
+    accessorKey: "role",
+    header: createSortableHeader("Role"),
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className={cn(
+          "font-medium",
+          roleVariants[row.original.role].className
+        )}
+      >
+        {roleVariants[row.original.role].label}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: createSortableHeader("Status"),
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className={cn(
+          "font-medium",
+          statusVariants[row.original.status].className
+        )}
+      >
+        {statusVariants[row.original.status].label}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "orders",
+    header: createSortableHeader("Orders"),
+    cell: ({ row }) => (
+      <span className="text-sm font-medium">{row.original.orders}</span>
+    ),
+  },
+  {
+    accessorKey: "totalSpent",
+    header: createSortableHeader("Total Spent"),
+    cell: ({ row }) => createPriceCell(row.original.totalSpent),
+  },
+  {
+    accessorKey: "lastActive",
+    header: createSortableHeader("Last Active"),
+    cell: ({ row }) => createDateCell(row.original.lastActive),
+  },
+];
 
-  const handleOpenDialog = () => {
-    form.reset({
-      username: '',
-      password: '',
-      confirmPassword: '',
-      fullName: '',
-      email: '',
-      role: 'user',
-      avatarUrl: '',
-    });
-    setEditingUser(null);
-    setIsDialogOpen(true);
-  };
+export default function Users() {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const handleEdit = (user: User) => {
-    setEditingUser(user);
-    form.reset({
-      username: user.username,
-      password: '', // Don't populate password
-      confirmPassword: '',
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      avatarUrl: user.avatarUrl || '',
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this user?")) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const onSubmit = (data: UserFormValues) => {
-    // Remove confirmPassword as it's not in the schema
-    const { confirmPassword, ...submissionData } = data;
-    
-    // When editing, if password is empty, remove it from submission
-    if (editingUser && !submissionData.password) {
-      delete submissionData.password;
-    }
-    
-    if (editingUser) {
-      updateMutation.mutate({ id: editingUser.id, data: submissionData });
-    } else {
-      createMutation.mutate(submissionData);
-    }
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4 p-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Users</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Manage user accounts</p>
+          <h2 className="text-3xl font-bold tracking-tight">Users</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage and track your users
+          </p>
         </div>
-        <Button onClick={handleOpenDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden p-4">
-        <EnhancedDataTable 
-          columns={columns.map(col => ({
-            ...col,
-            filterable: true,
-            filterType: col.accessorKey === 'role' ? 'select' : 'text',
-            filterOptions: col.accessorKey === 'role' ? [
-              { value: 'admin', label: 'Admin' },
-              { value: 'user', label: 'User' }
-            ] : undefined
-          }))} 
-          data={users || []} 
-          isLoading={isLoading}
-          pagination={true}
-          searchable={true}
-          filterable={true}
-          title="Users"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={mockUsers}
+        searchKey="name"
+        onRowClick={handleViewUser}
+      />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingUser ? "Edit User" : "Add New User"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!editingUser} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      {selectedUser && (
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>User Details</DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={selectedUser.avatar} />
+                    <AvatarFallback>
+                      {selectedUser.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-medium",
+                      roleVariants[selectedUser.role].className
+                    )}
+                  >
+                    {roleVariants[selectedUser.role].label}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-medium",
+                      statusVariants[selectedUser.status].className
+                    )}
+                  >
+                    {statusVariants[selectedUser.status].label}
+                  </Badge>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{editingUser ? "New Password (leave blank to keep current)" : "Password"}</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-medium">User Activity</h4>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total Orders</span>
+                      <span className="font-medium">{selectedUser.orders}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total Spent</span>
+                      <span className="font-medium">{createPriceCell(selectedUser.totalSpent)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Last Active</span>
+                      <span className="font-medium">{createDateCell(selectedUser.lastActive)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Joined</span>
+                      <span className="font-medium">{createDateCell(selectedUser.joinedAt)}</span>
+                    </div>
+                  </div>
+                </Card>
 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-medium">Location</h4>
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      {selectedUser.location.city}, {selectedUser.location.country}
+                    </p>
+                  </div>
+                </Card>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="avatarUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Avatar URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {createMutation.isPending || updateMutation.isPending
-                    ? "Saving..."
-                    : editingUser 
-                      ? "Update User" 
-                      : "Add User"
-                  }
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
-};
-
-export default Users;
+}

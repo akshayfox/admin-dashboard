@@ -1,7 +1,9 @@
-import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { TopProducts } from "@/components/dashboard/TopProducts";
-import { RecentOrders } from "@/components/dashboard/RecentOrders";
+import { StatCard } from "@/components/ui/card/StatCard";
+import { AreaChart } from "@/components/ui/charts/AreaChart";
+import { DataTable } from "@/components/ui/data-table/DataTable";
+import { createDateCell, createPriceCell, createStatusCell } from "@/components/ui/data-table/columns";
+import { type ColumnDef } from "@tanstack/react-table";
+import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react";
 
 // Sample data
 const analyticsData = {
@@ -60,7 +62,20 @@ const topProducts = [
   }
 ];
 
-const recentOrders = [
+interface Order {
+  id: string;
+  orderNumber: string;
+  user: {
+    fullName: string;
+    avatarUrl: string;
+  };
+  product: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  totalAmount: number;
+  createdAt: string;
+}
+
+const recentOrders: Order[] = [
   {
     id: "1",
     orderNumber: "ORD001",
@@ -69,7 +84,7 @@ const recentOrders = [
       avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
     },
     product: "Nike Air Max 270",
-    status: "completed" as const,
+    status: "completed",
     totalAmount: 129.99,
     createdAt: "2025-04-10T10:00:00Z"
   },
@@ -81,7 +96,7 @@ const recentOrders = [
       avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
     },
     product: "MacBook Pro M2",
-    status: "processing" as const,
+    status: "processing",
     totalAmount: 1299.99,
     createdAt: "2025-04-10T09:30:00Z"
   },
@@ -93,7 +108,7 @@ const recentOrders = [
       avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e"
     },
     product: "iPhone 14 Pro",
-    status: "pending" as const,
+    status: "pending",
     totalAmount: 999.99,
     createdAt: "2025-04-10T09:00:00Z"
   },
@@ -105,29 +120,141 @@ const recentOrders = [
       avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80"
     },
     product: "Sony WH-1000XM4",
-    status: "cancelled" as const,
+    status: "cancelled",
     totalAmount: 349.99,
     createdAt: "2025-04-10T08:30:00Z"
   }
 ];
 
+const statusVariants = {
+  pending: {
+    label: "Pending",
+    className: "text-yellow-700 dark:text-yellow-500 border-yellow-300 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950",
+  },
+  processing: {
+    label: "Processing",
+    className: "text-blue-700 dark:text-blue-500 border-blue-300 dark:border-blue-500 bg-blue-50 dark:bg-blue-950",
+  },
+  completed: {
+    label: "Completed",
+    className: "text-emerald-700 dark:text-emerald-500 border-emerald-300 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950",
+  },
+  cancelled: {
+    label: "Cancelled",
+    className: "text-rose-700 dark:text-rose-500 border-rose-300 dark:border-rose-500 bg-rose-50 dark:bg-rose-950",
+  },
+};
+
+const columns: ColumnDef<Order>[] = [
+  {
+    accessorKey: "orderNumber",
+    header: "Order",
+  },
+  {
+    accessorKey: "user.fullName",
+    header: "Customer",
+  },
+  {
+    accessorKey: "product",
+    header: "Product",
+  },
+  {
+    accessorKey: "totalAmount",
+    header: "Amount",
+    cell: ({ row }) => createPriceCell(row.original.totalAmount),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => createStatusCell(row.original.status, statusVariants),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => createDateCell(row.original.createdAt),
+  },
+];
+
 export default function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-      </div>
-      <div className="space-y-6">
-        <AnalyticsCards data={analyticsData} />
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
-          <div className="col-span-1 lg:col-span-4">
-            <SalesChart data={salesData} />
-          </div>
-          <div className="col-span-1 lg:col-span-3">
-            <TopProducts products={topProducts} />
-          </div>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-sm text-muted-foreground">
+            Your business at a glance
+          </p>
         </div>
-        <RecentOrders orders={recentOrders} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Revenue"
+          value={analyticsData.totalRevenue}
+          icon={DollarSign}
+          trend={analyticsData.growth}
+          valuePrefix="$"
+          gradientFrom="from-blue-500/10"
+          gradientTo="to-blue-500/5"
+          iconClassName="text-blue-500"
+        />
+        <StatCard
+          title="Total Orders"
+          value={analyticsData.totalOrders}
+          icon={ShoppingCart}
+          trend={8.2}
+          gradientFrom="from-green-500/10"
+          gradientTo="to-green-500/5"
+          iconClassName="text-green-500"
+        />
+        <StatCard
+          title="Total Customers"
+          value={analyticsData.totalCustomers}
+          icon={Users}
+          trend={-2.1}
+          gradientFrom="from-violet-500/10"
+          gradientTo="to-violet-500/5"
+          iconClassName="text-violet-500"
+        />
+        <StatCard
+          title="Growth Rate"
+          value={analyticsData.growth}
+          icon={TrendingUp}
+          valueSuffix="%"
+          gradientFrom="from-orange-500/10"
+          gradientTo="to-orange-500/5"
+          iconClassName="text-orange-500"
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-7">
+        <div className="col-span-full lg:col-span-4">
+          <AreaChart
+            data={salesData}
+            title="Sales Overview"
+            subtitle="Compare revenue and orders over time"
+            categories={[
+              {
+                key: "revenue",
+                label: "Revenue",
+                color: "#3b82f6",
+                formatter: (value) => `$${value.toLocaleString()}`,
+              },
+              {
+                key: "orders",
+                label: "Orders",
+                color: "#10b981",
+              },
+            ]}
+          />
+        </div>
+        <div className="col-span-full lg:col-span-3">
+          <DataTable
+            columns={columns}
+            data={recentOrders}
+            searchKey="orderNumber"
+          />
+        </div>
       </div>
     </div>
   );

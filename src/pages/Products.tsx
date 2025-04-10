@@ -1,359 +1,225 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { EnhancedDataTable } from "@/components/ui/enhanced-data-table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Trash2, Edit, Package } from "lucide-react";
-import { insertProductSchema } from "../../shared/schema";
-import type { Product } from "../../shared/schema";
+import { DataTable } from "@/components/ui/data-table/DataTable";
+import { type ColumnDef } from "@tanstack/react-table";
+import { mockProducts, type Product } from "@/data/mock/products";
+import { createDateCell, createPriceCell, createSortableHeader } from "@/components/ui/data-table/columns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Star, StarHalf } from "lucide-react";
 
-const Products = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const { toast } = useToast();
+const statusVariants = {
+  in_stock: {
+    label: "In Stock",
+    className: "text-emerald-700 dark:text-emerald-500 border-emerald-300 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950",
+  },
+  low_stock: {
+    label: "Low Stock",
+    className: "text-yellow-700 dark:text-yellow-500 border-yellow-300 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950",
+  },
+  out_of_stock: {
+    label: "Out of Stock",
+    className: "text-rose-700 dark:text-rose-500 border-rose-300 dark:border-rose-500 bg-rose-50 dark:bg-rose-950",
+  },
+};
 
-  // Fetch products
-  const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ['/api/products'],
-  });
-
-  // Setup form
-  const form = useForm({
-    resolver: zodResolver(insertProductSchema.extend({
-      price: z => z.string().transform(val => parseFloat(val)),
-      stock: z => z.string().transform(val => parseInt(val, 10))
-    })),
-    defaultValues: {
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      stock: '',
-      imageUrl: ''
-    }
-  });
-
-  // Create product mutation
-  const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('POST', '/api/products', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({
-        title: "Product Created",
-        description: "The product has been created successfully.",
-      });
-      setIsDialogOpen(false);
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Update product mutation
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: any }) => 
-      apiRequest('PATCH', `/api/products/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({
-        title: "Product Updated",
-        description: "The product has been updated successfully.",
-      });
-      setIsDialogOpen(false);
-      setEditingProduct(null);
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Delete product mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest('DELETE', `/api/products/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({
-        title: "Product Deleted",
-        description: "The product has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Define columns for data table
-  const columns = [
-    {
-      header: "ID",
-      accessorKey: "id",
-    },
-    {
-      header: "Name",
-      accessorKey: "name",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-md flex items-center justify-center">
-            <Package className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+const columns: ColumnDef<Product>[] = [
+  {
+    accessorKey: "name",
+    header: createSortableHeader("Product"),
+    cell: ({ row }) => {
+      const product = row.original;
+      return (
+        <div className="flex items-center gap-3">
+          <img 
+            src={product.image} 
+            alt={product.name} 
+            className="h-12 w-12 rounded-lg object-cover"
+          />
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{product.name}</span>
+            <span className="text-xs text-muted-foreground">{product.category}</span>
           </div>
-          <span className="font-medium">{row.getValue("name")}</span>
         </div>
-      )
+      );
     },
-    {
-      header: "Category",
-      accessorKey: "category",
-    },
-    {
-      header: "Price",
-      accessorKey: "price",
-      cell: ({ row }) => {
-        const price = parseFloat(row.getValue("price"));
-        return <span>${price.toFixed(2)}</span>;
-      }
-    },
-    {
-      header: "Stock",
-      accessorKey: "stock",
-    },
-    {
-      header: "Actions",
-      id: "actions",
-      cell: ({ row }) => {
-        const product = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleEdit(product)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleDelete(product.id)}
-              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+  },
+  {
+    accessorKey: "price",
+    header: createSortableHeader("Price"),
+    cell: ({ row }) => createPriceCell(row.original.price),
+  },
+  {
+    accessorKey: "stock",
+    header: createSortableHeader("Stock"),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">{row.original.stock}</span>
+        <Badge
+          variant="outline"
+          className={cn(
+            "font-medium",
+            statusVariants[row.original.status].className
+          )}
+        >
+          {statusVariants[row.original.status].label}
+        </Badge>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "rating",
+    header: createSortableHeader("Rating"),
+    cell: ({ row }) => {
+      const rating = row.original.rating;
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex text-yellow-500">
+            {[...Array(fullStars)].map((_, i) => (
+              <Star key={i} className="h-4 w-4 fill-current" />
+            ))}
+            {hasHalfStar && <StarHalf className="h-4 w-4 fill-current" />}
           </div>
-        );
-      }
-    }
-  ];
+          <span className="text-sm font-medium">({row.original.reviews})</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "sales",
+    header: createSortableHeader("Sales"),
+    cell: ({ row }) => (
+      <span className="text-sm font-medium">{row.original.sales}</span>
+    ),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: createSortableHeader("Last Updated"),
+    cell: ({ row }) => createDateCell(row.original.updatedAt),
+  },
+];
 
-  const handleOpenDialog = () => {
-    form.reset();
-    setEditingProduct(null);
-    setIsDialogOpen(true);
-  };
+export default function Products() {
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    form.reset({
-      name: product.name,
-      description: product.description || '',
-      price: product.price.toString(),
-      category: product.category || '',
-      stock: product.stock.toString(),
-      imageUrl: product.imageUrl || ''
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const onSubmit = (data: any) => {
-    if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, data });
-    } else {
-      createMutation.mutate(data);
-    }
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsViewModalOpen(true);
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4 p-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Products</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Manage your product inventory</p>
+          <h2 className="text-3xl font-bold tracking-tight">Products</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage and track your products
+          </p>
         </div>
-        <Button onClick={handleOpenDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden p-4">
-        <EnhancedDataTable 
-          columns={columns.map(col => ({
-            ...col,
-            filterable: true,
-            filterType: col.accessorKey === 'category' ? 'select' : 'text',
-            filterOptions: col.accessorKey === 'category' ? 
-              [...new Set((products || [])
-                .map(p => p.category)
-                .filter(Boolean)
-                .map(cat => ({ value: cat || '', label: cat || 'Uncategorized' })))] : undefined
-          }))} 
-          data={products || []} 
-          isLoading={isLoading}
-          pagination={true}
-          searchable={true}
-          filterable={true}
-          title="Products"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={mockProducts}
+        searchKey="name"
+        onRowClick={handleViewProduct}
+      />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingProduct ? "Edit Product" : "Add New Product"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" step="0.01" min="0" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+      {selectedProduct && (
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Product Details</DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-6">
+              <div className="flex items-start gap-6">
+                <img 
+                  src={selectedProduct.image} 
+                  alt={selectedProduct.name} 
+                  className="h-32 w-32 rounded-lg object-cover"
                 />
-
-                <FormField
-                  control={form.control}
-                  name="stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{selectedProduct.name}</h3>
+                      <p className="text-sm text-muted-foreground">{selectedProduct.category}</p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-medium",
+                        statusVariants[selectedProduct.status].className
+                      )}
+                    >
+                      {statusVariants[selectedProduct.status].label}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm">{selectedProduct.description}</p>
+                </div>
               </div>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-medium">Product Stats</h4>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Price</span>
+                      <span className="font-medium">{createPriceCell(selectedProduct.price)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Stock</span>
+                      <span className="font-medium">{selectedProduct.stock}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sales</span>
+                      <span className="font-medium">{selectedProduct.sales}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Rating</span>
+                      <div className="flex items-center gap-1">
+                        <div className="flex text-yellow-500">
+                          {[...Array(Math.floor(selectedProduct.rating))].map((_, i) => (
+                            <Star key={i} className="h-4 w-4 fill-current" />
+                          ))}
+                          {selectedProduct.rating % 1 >= 0.5 && (
+                            <StarHalf className="h-4 w-4 fill-current" />
+                          )}
+                        </div>
+                        <span className="font-medium">({selectedProduct.reviews})</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
 
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {createMutation.isPending || updateMutation.isPending
-                    ? "Saving..."
-                    : editingProduct 
-                      ? "Update Product" 
-                      : "Add Product"
-                  }
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+                <Card className="p-4 space-y-3">
+                  <h4 className="font-medium">Dates</h4>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Created</span>
+                      <span className="font-medium">{createDateCell(selectedProduct.createdAt)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Last Updated</span>
+                      <span className="font-medium">{createDateCell(selectedProduct.updatedAt)}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
-};
-
-export default Products;
+}
