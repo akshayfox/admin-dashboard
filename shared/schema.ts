@@ -1,155 +1,102 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z } from 'zod';
+import { createInsertSchema } from 'drizzle-zod';
+import { pgTable, serial, text, integer, timestamp, boolean, decimal } from 'drizzle-orm/pg-core';
 
 // User schema
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  fullName: text("full_name").notNull(),
-  email: text("email").notNull().unique(),
-  role: text("role").notNull().default("user"), // admin, user
-  avatarUrl: text("avatar_url"),
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull(),
+  password: text('password').notNull(),
+  fullName: text('full_name').notNull(),
+  email: text('email').notNull(),
+  role: text('role').notNull(),
+  avatarUrl: text('avatar_url'),
+  isActive: boolean('is_active').default(true),
+  lastLogin: timestamp('last_login')
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  fullName: true,
-  email: true,
-  role: true,
-  avatarUrl: true,
-});
-
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Product schema
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  imageUrl: text("image_url"),
-  category: text("category"),
-  stock: integer("stock").notNull().default(0),
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  price: decimal('price').notNull(),
+  imageUrl: text('image_url'),
+  category: text('category').notNull(),
+  stock: integer('stock').notNull(),
+  inStock: boolean('in_stock').default(true)
 });
 
-export const insertProductSchema = createInsertSchema(products)
-  .pick({
-    name: true,
-    description: true,
-    price: true,
-    imageUrl: true,
-    category: true,
-    stock: true,
-  })
-  .extend({
-    price: z.number().or(z.string()),
-  });
-
+export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
+// Order status type
+export type OrderStatus = 'completed' | 'processing' | 'shipped' | 'cancelled' | 'pending';
+
 // Order schema
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  orderNumber: text("order_number").notNull().unique(),
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  status: text("status").notNull().default("pending"), // pending, processing, shipped, completed, cancelled
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  orderNumber: text('order_number').notNull(),
+  totalAmount: decimal('total_amount').notNull(),
+  status: text('status').notNull().$type<OrderStatus>(),
+  createdAt: timestamp('created_at').defaultNow(),
+  shippingAddress: text('shipping_address'),
+  paymentMethod: text('payment_method')
 });
 
-export const insertOrderSchema = createInsertSchema(orders)
-  .pick({
-    userId: true,
-    orderNumber: true,
-    totalAmount: true,
-    status: true,
-  })
-  .extend({
-    totalAmount: z.number().or(z.string()),
-    createdAt: z.date().optional(),
-  });
-
+export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
 
-// OrderItem schema
-export const orderItems = pgTable("order_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  productId: integer("product_id").notNull(),
-  quantity: integer("quantity").notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+// Order Item schema
+export const orderItems = pgTable('order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').notNull(),
+  productId: integer('product_id').notNull(),
+  quantity: integer('quantity').notNull(),
+  price: decimal('price').notNull()
 });
 
-export const insertOrderItemSchema = createInsertSchema(orderItems)
-  .pick({
-    orderId: true,
-    productId: true,
-    quantity: true,
-    price: true,
-  })
-  .extend({
-    price: z.number().or(z.string()),
-  });
-
+export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
-// Dashboard statistics schema for API responses
-export const dashboardStatsSchema = z.object({
-  totalRevenue: z.number(),
-  todayRevenue: z.number(),
-  totalOrders: z.number(),
-  pendingOrders: z.number(),
-  completedOrders: z.number(),
-  totalProducts: z.number(),
-  totalCustomers: z.number(),
-  lowStockProducts: z.number(),
-});
+// Dashboard Stats schema (for reference, not stored in database)
+export interface DashboardStats {
+  totalRevenue: number | string;
+  todayRevenue: number | string;
+  totalOrders: number | string;
+  pendingOrders: number | string;
+  completedOrders: number | string;
+  totalProducts: number | string;
+  totalCustomers: number | string;
+  lowStockProducts: number | string;
+}
 
-export type DashboardStats = z.infer<typeof dashboardStatsSchema>;
+// Top Product schema (for reference, not stored in database)
+export interface TopProduct {
+  id: number | string;
+  name: string;
+  category?: string;
+  totalSold: number | string;
+  totalRevenue: number | string;
+  imageUrl?: string;
+  iconName?: 'box' | 'smile' | 'file' | 'users';
+}
 
-// Extended order type with customer info for UI display
-export const orderWithUserSchema = z.object({
-  id: z.number(),
-  userId: z.number(),
-  orderNumber: z.string(),
-  totalAmount: z.union([z.number(), z.string()]),
-  status: z.string(),
-  createdAt: z.union([z.string(), z.date()]),
-  user: z.object({
-    id: z.number(),
-    username: z.string(),
-    fullName: z.string(),
-    email: z.string(),
-    role: z.string(),
-    avatarUrl: z.string().nullable().optional(),
-  }),
-});
+// Sales Data schema (for reference, not stored in database)
+export interface SalesData {
+  date: string;
+  revenue: number | string;
+}
 
-export type OrderWithUser = z.infer<typeof orderWithUserSchema>;
-
-// Top products schema for dashboard
-export const topProductSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  category: z.string().optional(),
-  totalSold: z.number(),
-  totalRevenue: z.number(),
-  imageUrl: z.string().optional(),
-});
-
-export type TopProduct = z.infer<typeof topProductSchema>;
-
-// Sales data schema for chart
-export const salesDataSchema = z.object({
-  date: z.string(),
-  revenue: z.number(),
-});
-
-export type SalesData = z.infer<typeof salesDataSchema>;
+// Enhanced types for API responses
+export interface OrderWithUser extends Order {
+  user: User;
+}
